@@ -6,7 +6,6 @@ from plotly.subplots import make_subplots
 import json
 import math
 from decimal import Decimal, ROUND_HALF_UP
-from datetime import datetime
 import io
 
 st.set_page_config(
@@ -183,7 +182,6 @@ def run_rob3_month(
     loan_in = d_money(loan_cash)
     open_cash_d = d_money(opening_cash)
 
-    # Sync component COGS with component_unit_cost
     effective_var_lines = dict(var_lines)
     effective_var_lines["components_COGS"] = float(comp_cost)
 
@@ -209,7 +207,6 @@ def run_rob3_month(
     gross_revenue = p * Decimal(sold)
     net_revenue = gross_revenue - refunds
 
-    # Variable expense recognized on ALL attempted kits (including failed builds)
     variable_expense = var_per_unit * Decimal(attempted)
     consumed_component_expense = comp_cost * Decimal(attempted)
     failed_writeoff_included = comp_cost * Decimal(failed)
@@ -218,7 +215,6 @@ def run_rob3_month(
     operating_profit = net_revenue - variable_expense - fixed_expense - ad
     net_profit = operating_profit - intr
 
-    # Cash outflow for components occurs on restock, NOT on consumption of existing stock
     restock_cash_outflow = comp_cost * Decimal(restock_units)
     ending_cash = (
         open_cash_d
@@ -282,7 +278,6 @@ def commit_simulation_step(sim_date: str, run_id: str, sim_result: dict, price: 
     v = state["state_version"]
     tx_base = len(state["ledger"]) + 1
 
-    # Record dated ledger entries
     entries = []
     if sim_result["net_revenue"] != 0:
         entries.append({
@@ -419,15 +414,9 @@ with st.sidebar:
     st.title("🤖 Los-Robots (10)")
     st.caption(f"Pathway: **{PATHWAY_ID}** | Course: **{COURSE}**")
     st.info(
-        f"**Active Snapshot:** `{state['snapshot_id']}`
-
-"
-        f"**State Version:** `v{state['state_version']}`
-
-"
-        f"**Sim Date:** `{state['simulation_date']}`
-
-"
+        f"**Active Snapshot:** `{state['snapshot_id']}`\n\n"
+        f"**State Version:** `v{state['state_version']}`\n\n"
+        f"**Sim Date:** `{state['simulation_date']}`\n\n"
         f"**Stage:** `Stage 1 (Offline Deterministic Core)`"
     )
 
@@ -459,10 +448,8 @@ with st.sidebar:
     st.divider()
     st.caption("Upcoming Modules (Not Implemented in Stage 1):")
     st.markdown(
-        "- ⏳ Stage 2: Departmental AI Tabs, Report Center PDFs, Marketing Studio
-"
-        "- ⏳ Stage 3: Cross-Course Panel, Snapshot Assessments
-"
+        "- ⏳ Stage 2: Departmental AI Tabs, Report Center PDFs, Marketing Studio\n"
+        "- ⏳ Stage 3: Cross-Course Panel, Snapshot Assessments\n"
         "- ⏳ Stage 4: Optional Demo Storefront"
     )
 
@@ -473,7 +460,6 @@ st.markdown(
     "Input adjustments preview scenarios until explicitly approved and committed to the ledger."
 )
 
-# Run live preview from current inputs
 inp = state["inputs"]
 v_lines = state["cost_lines"]["variable_per_unit"]
 f_lines = state["cost_lines"]["monthly_fixed"]
@@ -531,7 +517,7 @@ with tab_overview:
             {"Metric": "Available Component Sets", "Value": f"{preview['available_stock']} sets", "Rule / Meaning": "opening_stock + restock_units"},
             {"Metric": "Requested Demand", "Value": f"{preview['requested']} kits", "Rule / Meaning": "Customer orders requested"},
             {"Metric": "Attempted Builds", "Value": f"{preview['attempted']} kits", "Rule / Meaning": "min(requested, capacity, available_stock)"},
-            {"Metric": "Failed / Rework Builds", "Value": f"{preview['failed']} kits", "Rule / Meaning": "floor(attempted * defect_rate) — $0 revenue, full cost"},
+            {"Metric": "Failed / Rework Builds", "Value": f"{preview['failed']} kits", "Rule / Meaning": "floor(attempted * defect_rate) - $0 revenue, full cost"},
             {"Metric": "Completed & Sold Kits", "Value": f"{preview['sold']} kits", "Rule / Meaning": "attempted - failed"},
             {"Metric": "Unserved Demand", "Value": f"{preview['unserved_demand']} kits", "Rule / Meaning": "requested - attempted (no backlog)"},
             {"Metric": "Ending Stock Cover", "Value": f"{preview['stock_cover_months']:.2f} mos" if preview["attempted"] > 0 else "N/A", "Rule / Meaning": "ending_stock / attempted"}
@@ -640,33 +626,33 @@ with tab_math:
 
     if level == "Foundation":
         st.markdown("### Foundation Task: Unconstrained Profit Derivative & Critical Point")
-        st.latex(r"q(p) = a - b p \quad 	ext{on } 0 \le p \le 2p_0")
+        st.latex(r"q(p) = a - b p \quad \text{on } 0 \le p \le 2p_0")
         st.latex(r"P(p) = (p - v)(a - b p) - F \qquad P'(p) = a + b v - 2 b p")
         st.write(
-            f"- **Parameters:** $a = {a:.2f}$ kits, $b = {b:.5f}$ kits/dollar, $v = \${v:.2f}$/kit, $F = \${F:.2f}$/month, Domain: $0 \le p \le \${p_max:.2f}$.
-"
-            f"- **Unconstrained Critical Point:** $p^* = \frac{{a + bv}}{{2b}} = \${p_unconstrained:.2f}$ per kit (where $P'(p^*) = 0$ dollars per dollar of price change)."
+            f"- **Parameters:** $a = {a:.2f}$ kits, $b = {b:.5f}$ kits/dollar, $v = \\${v:.2f}$/kit, $F = \\${F:.2f}$/month, Domain: $0 \\le p \\le \\${p_max:.2f}$.\n"
+            f"- **Unconstrained Critical Point:** $p^* = \\frac{{a + bv}}{{2b}} = \\${p_unconstrained:.2f}$ per kit (where $P'(p^*) = 0$ dollars per dollar of price change)."
         )
     elif level == "Applied":
         st.markdown("### Applied Task: Capacity-Constrained Piecewise Profit & Corner Check")
-        st.latex(r"s(p) = \min\left(	ext{capacity},\ \max(0,\ a - b p)ight)")
-        st.latex(r"P'(p) = egin{cases} 	ext{capacity} & 	ext{if } p < p_{	ext{corner}} \ 	ext{undefined (corner)} & 	ext{at } p_{	ext{corner}} = rac{a - 	ext{capacity}}{b} \ a + b v - 2 b p & 	ext{if } p > p_{	ext{corner}} \end{cases}")
+        st.latex(r"s(p) = \min\left(\text{capacity},\ \max(0,\ a - b p)\right)")
+        st.latex(r"P'(p) = \begin{cases} \text{capacity} & \text{if } p < p_{\text{corner}} \\ \text{undefined (corner)} & \text{at } p_{\text{corner}} = \frac{a - \text{capacity}}{b} \\ a + b v - 2 b p & \text{if } p > p_{\text{corner}} \end{cases}")
+        feas_note = (
+            f"Since demand exceeds capacity at $p^*$, the constrained continuous optimum shifts to the corner $p = \\${p_corner:.2f}$!"
+            if (a - b * p_unconstrained) > cap
+            else "Since demand is within capacity, $p^*$ is feasible!"
+        )
         st.write(
-            f"- **Capacity Boundary:** $\text{{capacity}} = {cap:.0f}$ kits/month $\implies p_{{\text{{corner}}}} = \${p_corner:.2f}$/kit.
-"
-            f"- **Feasibility Check:** Unconstrained $p^* = \${p_unconstrained:.2f}$ requires $q({p_unconstrained:.2f}) = {a - b*p_unconstrained:.2f}$ kits. "
-            f"{'Since demand exceeds capacity at $p^*$, the constrained continuous optimum shifts to the corner $p = \$' + f'{p_corner:.2f}$!' if (a - b*p_unconstrained) > cap else 'Since demand is within capacity, $p^*$ is feasible!'}"
+            f"- **Capacity Boundary:** $\\text{{capacity}} = {cap:.0f}$ kits/month $\\implies p_{{\\text{{corner}}}} = \\${p_corner:.2f}$/kit.\n"
+            f"- **Feasibility Check:** Unconstrained $p^* = \\${p_unconstrained:.2f}$ requires $q({p_unconstrained:.2f}) = {a - b*p_unconstrained:.2f}$ kits. {feas_note}"
         )
     else:
         st.markdown("### Advanced Task: Constrained Optimization + Definite Integration of Continuous Rates")
-        st.latex(r"s(p) = \min(	ext{capacity},\ \max(0,\ a - b p)), \qquad 	ext{Net Change} = \int_{t_1}^{t_2} [r(t) - c(t)]\,dt")
+        st.latex(r"s(p) = \min(\text{capacity},\ \max(0,\ a - b p)), \qquad \text{Net Change} = \int_{t_1}^{t_2} [r(t) - c(t)]\,dt")
         st.write(
-            f"- **Constrained Optimum Check:** Capacity corner at $p_{{\text{{corner}}}} = \${p_corner:.2f}$ vs. unconstrained critical point $p^* = \${p_unconstrained:.2f}$ (continuous projection vs. rounded integer sales).
-"
-            f"- **Definite Integral Rate Model:** Integrates continuous revenue rate $r(t)$ and cost rate $c(t)$ (in \$/day) over $[0, T]$ days without differentiating step/floor functions."
+            f"- **Constrained Optimum Check:** Capacity corner at $p_{{\\text{{corner}}}} = \\${p_corner:.2f}$ vs. unconstrained critical point $p^* = \\${p_unconstrained:.2f}$ (continuous projection vs. rounded integer sales).\n"
+            f"- **Definite Integral Rate Model:** Integrates continuous revenue rate $r(t)$ and cost rate $c(t)$ (in \\$/day) over $[0, T]$ days without differentiating step/floor functions."
         )
 
-    # Interactive Linked Graph & Table for Price Domain
     p_grid = np.linspace(0, p_max, 241)
     q_cont = np.maximum(0.0, a - b * p_grid)
     if level == "Foundation":
@@ -682,7 +668,7 @@ with tab_math:
 
     fig = make_subplots(
         rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.10,
-        subplot_titles=("Profit Function P(p) — Continuous Model vs. Integer Rounded", "Derivative P'(p) ($/($/kit))")
+        subplot_titles=("Profit Function P(p) - Continuous Model vs. Integer Rounded", "Derivative P'(p) ($/($/kit))")
     )
     fig.add_trace(go.Scatter(x=p_grid, y=profit_cont, name="Continuous Profit P(p)", line=dict(color="#1f77b4", width=3)), row=1, col=1)
     fig.add_trace(go.Scatter(x=p_grid, y=profit_int, name="Rounded Integer Profit (floor)", line=dict(color="#ff7f0e", dash="dot")), row=1, col=1)
@@ -693,7 +679,6 @@ with tab_math:
         fig.add_vline(x=p_corner, line_dash="dash", line_color="#d62728", annotation_text=f"Capacity Corner p=${p_corner:.2f}")
         fig.add_trace(go.Scatter(x=[p_corner], y=[corner_profit], mode="markers", name="Capacity Corner", marker=dict(size=10, color="#d62728", symbol="diamond")), row=1, col=1)
 
-    # Split derivative curve at corner for Applied/Advanced so jump discontinuity is clear
     if level in ["Applied", "Advanced"] and 0 < p_corner < p_max:
         left_mask = p_grid < p_corner
         right_mask = p_grid > p_corner
@@ -710,7 +695,6 @@ with tab_math:
     fig.update_layout(height=560, title_text=f"{TEAM_ID} | {PATHWAY_ID} | {COURSE} ({level}) | Snapshot {state['snapshot_id']}")
     st.plotly_chart(fig, use_container_width=True)
 
-    # Linked Price-Volume Table
     sample_prices = sorted(list(set([0, 60, 90, round(p_corner, 2), round(p0, 2), round(p_unconstrained, 2), 180, round(p_max, 2)])))
     sample_prices = [sp for sp in sample_prices if 0 <= sp <= p_max]
     table_rows = []
@@ -728,7 +712,7 @@ with tab_math:
             "Continuous Profit ($)": round(pc, 2),
             "Integer Profit ($)": round(pi, 2)
         })
-    st.markdown("#### Linked Price–Volume–Profit Table")
+    st.markdown("#### Linked Price-Volume-Profit Table")
     st.dataframe(pd.DataFrame(table_rows), use_container_width=True, hide_index=True)
 
     if level == "Advanced":
@@ -741,8 +725,6 @@ with tab_math:
         c0 = ic3.number_input("Base Cost Rate c0 ($/day)", value=60.0)
         c_slope = ic3.number_input("Cost Rate Growth ($/day^2)", value=5.0)
 
-        # Exact analytical definite integrals over [0, T]:
-        # int_0^T (r0 + r_slope*t) dt = r0*T + 0.5*r_slope*T^2
         acc_rev = r0 * t_end + 0.5 * r_slope * (t_end ** 2)
         acc_cost = c0 * t_end + 0.5 * c_slope * (t_end ** 2)
         acc_prof = acc_rev - acc_cost
@@ -789,7 +771,6 @@ with tab_tests:
     if st.button("▶️ Run All Stage 1 Acceptance Tests", type="primary"):
         results = []
 
-        # 1. Three-month fixture replay (starting from clean opening state)
         fixture_df = pd.read_csv(io.StringIO(FIXTURE_CSV_CONTENT))
         expected_fixture = [
             {"month": "2027-01", "sold": 30, "rev": 3600.0, "exp": 2550.0, "prof": 1050.0, "cash": 6950.0, "stock": 70},
@@ -834,7 +815,6 @@ with tab_tests:
             sim_cash = out["ending_cash"]
             sim_stock = out["ending_stock_units"]
 
-        # 2. ROB-3 Business-Specific Low Stock Test
         low_stock_out = run_rob3_month(
             price=120.0, requested=40, staff_hours=90.0, hours_per_unit=3.0,
             opening_cash=5000.0, opening_stock_units=10, component_unit_cost=30.0,
@@ -853,7 +833,6 @@ with tab_tests:
             "Details": f"Sold={low_stock_out['sold']}, Rev={fmt_usd(low_stock_out['net_revenue'])}, Exp={fmt_usd(low_stock_out['total_expense'])}, Profit={fmt_usd(low_stock_out['operating_profit'])}, Stock={low_stock_out['ending_stock_units']}"
         })
 
-        # 3. Zero Sales Test
         zero_out = run_rob3_month(
             price=120.0, requested=0, staff_hours=90.0, hours_per_unit=3.0,
             opening_cash=5000.0, opening_stock_units=100, component_unit_cost=30.0,
@@ -866,7 +845,6 @@ with tab_tests:
             "Details": f"Rev={fmt_usd(zero_out['net_revenue'])}, Var={fmt_usd(zero_out['variable_expense'])}, Profit={fmt_usd(zero_out['operating_profit'])}"
         })
 
-        # 4. AP Calculus Course Adapter Check (D0=60, p0=30, v=10, F=500, cap=40 -> p*=40, profit=700; integral=1150)
         a_c, b_c = 2.0 * 60.0, 60.0 / 30.0
         p_corner_c = (a_c - 40.0) / b_c
         profit_c = (p_corner_c - 10.0) * 40.0 - 500.0
@@ -878,7 +856,6 @@ with tab_tests:
             "Details": f"Constrained p*=${p_corner_c:.2f} (exp $40.00), Profit=${profit_c:.2f} (exp $700.00), Rate Integral=${integral_c:.2f} (exp $1,150.00)"
         })
 
-        # 5. Stale / Wrong-Team Import Rejection Check
         wrong_team = json.dumps({"team_id": "OTHER-TEAM", "pathway_id": "ROB-3", "course": "AP Calculus", "snapshot_id": "S1", "state_version": 99, "simulation_date": "2027-01-01", "currency": "USD", "inputs": {}, "cost_lines": {}, "balances": {"cash": 5000, "stock_units": 100}, "ledger": []})
         ok_wt, _ = validate_and_import_snapshot(wrong_team)
         stale_ver = json.dumps({"team_id": TEAM_ID, "pathway_id": "ROB-3", "course": "AP Calculus", "snapshot_id": "S0", "state_version": 0, "simulation_date": "2027-01-01", "currency": "USD", "inputs": {}, "cost_lines": {}, "balances": {"cash": 5000, "stock_units": 100}, "ledger": []})
